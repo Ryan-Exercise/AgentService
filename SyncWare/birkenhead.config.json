@@ -1,0 +1,14 @@
+﻿{
+    "Origin": {
+        "Server": "MSSQL",
+        "ConnectionString": "Server=local,1434;Database=evolution;User Id=sa;Password=Birkenhead2023@Ryan;"
+    },
+    "Destination": {
+        "Server": "MSSQL",
+        "ConnectionString": "Server=local,1435;Database=evolution;User Id=sa;Password=Storm2023@Ryan;",
+        "Tables": [ "Consumer", "Organisation" ]
+    },
+    "Tables": {
+        "MSSQL": [ "Consumer", "Organisation" ]
+    }
+}
