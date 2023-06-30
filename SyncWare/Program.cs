@@ -2,11 +2,11 @@
 
 using System.Reflection;
 using System.Text.Json;
-using Demo.Console;
+using Sync.Client.Service;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sync.Client.Service.Factories;
 using Sync.Core;
-
 
 
 if (args.Count() != 1)
@@ -18,6 +18,18 @@ var services = new ServiceCollection();
 var configuration = new ConfigurationBuilder().AddJsonFile($"{args[0]}.config.json", optional: true, reloadOnChange: true).Build();
 services.Configure<SyncConfig>(configuration);
 services.AddScoped<SyncService>();
+services.AddSingleton<ISyncFactory>(s => new SqlServerFactory());
+services.AddSingleton<ISyncFactory>(s => new InterbaseFactory());
+services.AddSingleton<SyncFactoryFactory>(provider => identifier =>
+{
+    var factories = provider.GetServices<ISyncFactory>().ToArray();
+    return identifier switch
+    {
+        "MSSQL" => factories[0],
+        "INTERBASE" => factories[1],
+        _ => throw new InvalidOperationException()
+    };
+});
 
 var provider = services.BuildServiceProvider();
 

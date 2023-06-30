@@ -58,4 +58,4 @@ var tasks = processes.Select(p => p.WaitForExitAsync());
 await Task.WhenAll(tasks);
 
 Console.WriteLine("All processes completed");
-Console.ReadLine();
+//Console.ReadLine();

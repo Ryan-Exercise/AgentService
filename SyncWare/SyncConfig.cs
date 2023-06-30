@@ -1,13 +1,14 @@
 ﻿using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using Sync.Core.Script;
 
 namespace Sync.Core;
 public class SyncConfig
 {
     public EndPoint? Origin { get; set; }
     public EndPoint? Destination { get; set; }
-    public Dictionary<string, List<string>>? Tables { get; set; }
+    
 
     public static SyncConfig Default() {
         var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "./";
@@ -30,6 +31,7 @@ public class EndPoint
 {
     public string? Server { get; set; }
     public string? ConnectionString { get; set; }
+    public ScriptOptions? Options { get; set; }
 }
 
 

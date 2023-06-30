@@ -16,5 +16,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Factories\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Factories\" />
   </ItemGroup>
 </Project>

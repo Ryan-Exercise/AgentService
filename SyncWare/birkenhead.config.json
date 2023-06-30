@@ -1,14 +1,16 @@
 ﻿{
     "Origin": {
         "Server": "MSSQL",
-        "ConnectionString": "Server=local,1434;Database=evolution;User Id=sa;Password=Birkenhead2023@Ryan;"
+        "ConnectionString": "Server=localhost,1434;Database=evolution;TrustServerCertificate=true;User Id=sa;Password=Birkenhead2023@Ryan;",
+        "Options": {
+            "Tables": [ "Consumer", "Organisation" ],
+            "QueryTemplate": "SELECT {@Columns} FROM {@Table}",
+            "Extras": ""
+        }
+
     },
     "Destination": {
         "Server": "MSSQL",
-        "ConnectionString": "Server=local,1435;Database=evolution;User Id=sa;Password=Storm2023@Ryan;",
-        "Tables": [ "Consumer", "Organisation" ]
-    },
-    "Tables": {
-        "MSSQL": [ "Consumer", "Organisation" ]
+        "ConnectionString": "Server=localhost,1435;Database=vensa;TrustServerCertificate=true;User Id=sa;Password=Storm2023@Ryan;"
     }
 }
