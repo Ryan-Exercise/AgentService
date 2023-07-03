@@ -12,6 +12,8 @@ namespace Sync.Core.Script
 		string GenerateDisableDatabaseTrackingSQL(string database);
 		string GenerateEnableTableTrackingSQL(string tableName);
         string GenerateDisableTableTrackingSQL(string tableName);
+		string GenerateEnableTablesTrackingSQL(IEnumerable<string> tableNames);
+		string GenerateDisableTablesTrackingSQL(IEnumerable<string> tableNames);
         string GenerateQueryTableDeltaSQL(string table, params string[] parameters);
 	}
 }

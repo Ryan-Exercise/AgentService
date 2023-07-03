@@ -4,6 +4,7 @@
 // // Date Created: 23/06/2023
 using System;
 using System.Data;
+using System.Text;
 using System.Timers;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
@@ -35,15 +36,16 @@ namespace Sync.Client.Service
 
             _provider = ServiceEnhancer.ProviderReducer(configValue.Origin, factory);
 
-            System.Console.WriteLine("Create SyncService");
+            Console.WriteLine("Create SyncService");
         }
 
         private bool _isRunning;
         private Timer _timer = new Timer(10000);
 		public void Run() {
-            
 
-            System.Console.WriteLine("Sync Service is running");
+            SeedDatabase();
+            Console.WriteLine("Sync Service is running");
+
             ToggleSync(true);
             if (!_isRunning)
             {
@@ -69,31 +71,58 @@ namespace Sync.Client.Service
                 try
                 {
                     connection.Open();
-                    var tableName = "Consumer";
-                    List<string>? primaryKeys;
-                    if (!_pkCache.TryGetValue(tableName, out primaryKeys))
-                    {
-                        primaryKeys = CommonEnhancer.GetTablePrimaryKeys(connection, tableName);
-                        if(_pkCache.TryAdd(tableName, primaryKeys))
-                        {
-                            Console.WriteLine($"Add {primaryKeys} as primary keys for {tableName} successfully");
-                        }
-                    }
-                    
 
-                    //using(var command = connection.CreateCommand())
-                    //{
-                    //    command.CommandText = _provider.GenerateDeltaQuery("Consumer");
-                    //    command.CommandType = CommandType.Text;
-                    //    using(IDataReader reader = command.ExecuteReader())
-                    //    {
-                    //        while (reader.Read())
-                    //        {
-                    //            Console.WriteLine($"{reader.GetValue(0)},{reader.GetValue(1)}");
-                    //        }
-                            
-                    //    }
-                    //}
+                    using (var command = connection.CreateCommand())
+                    {
+                        CommonEnhancer.Null(_origin.Options);
+                        CommonEnhancer.Null(_origin.Options.Tables);
+                        command.CommandType = CommandType.Text;
+                        _origin.Options.Tables.ForEach(t =>
+                        {
+                            Console.WriteLine($"------------------- {t} begin -------------------");
+                            List<string>? primaryKeys;
+                            if (!_pkCache.TryGetValue(t, out primaryKeys))
+                            {
+                                primaryKeys = CommonEnhancer.GetTablePrimaryKeys(connection, t);
+                                if (!_pkCache.TryAdd(t, primaryKeys))
+                                {
+                                    Console.WriteLine($"Failed to add {primaryKeys} as primary keys for {t} successfully");
+                                }
+                            }
+                            command.CommandText = _provider.GenerateQueryTableDeltaSQL(t, primaryKeys.ToArray());
+                            using (IDataReader reader = command.ExecuteReader())
+                            {
+                                
+                                while (reader.Read())
+                                {
+                                    int rowNumber = 0;
+                                    var rowBuilder = new StringBuilder($"{rowNumber++} \t");
+                                    for (int i = 0;i < reader.FieldCount; i++)
+                                    {
+                                        rowBuilder.AppendFormat("{0}|\t", reader[i]);
+                                    }
+                                    rowBuilder.AppendLine();
+                                    Console.WriteLine(rowBuilder.ToString());
+                                }
+                                //var schemaTable = reader.GetSchemaTable();
+                                //CommonEnhancer.Null(schemaTable);
+                                ////int rowNumber = 0;
+                                //foreach (DataRow row in schemaTable.Rows)
+                                //{
+                                //    var rowBuilder = new StringBuilder($"{rowNumber++} \t");
+                                //    foreach(DataColumn column in schemaTable.Columns)
+                                //    {
+                                //        rowBuilder.Append($"{column.ColumnName} = {row[column]},");
+                                //    }
+                                //    Console.WriteLine(rowBuilder.Remove(rowBuilder.Length - 1, 1).ToString());
+                                //}
+                            }
+                            Console.WriteLine($"------------------- {t} end -------------------");
+                        });
+                        
+                        
+                        
+                    }
                 }
                 catch(Exception ex)
                 {
@@ -103,29 +132,54 @@ namespace Sync.Client.Service
             }
         }
 
+
+        private void SeedDatabase()
+        {
+            CommonEnhancer.Null(_origin.ConnectionString);
+            using (var connection = _originFactory.CreateConnection(_origin.ConnectionString))
+            {
+                connection.Open();
+                IDbCommand seedCommand = connection.CreateCommand();
+                seedCommand.CommandText = File.ReadAllText("Seed.sql");
+                seedCommand.ExecuteNonQuery();
+                Console.WriteLine("Seed database completed!");
+            }
+        }
+
         private void ToggleSync(bool onOff)
         {
             CommonEnhancer.Null(_origin.ConnectionString);
             using (var connection = _originFactory.CreateConnection(_origin.ConnectionString))
             {
-                CommonEnhancer.Null(_origin.Options);
-
-                var sql = onOff ? _provider.GenerateEnableDatabaseTrackingSQL(connection.Database)
-                    : _provider.GenerateDisableDatabaseTrackingSQL(connection.Database);
-
                 connection.Open();
+                CommonEnhancer.Null(_origin.Options);
+                CommonEnhancer.Null(_origin.Options.Tables);
+                var sqlBuilder = new StringBuilder();
+                if(onOff)
+                {
+                    sqlBuilder.AppendLine(_provider.GenerateEnableDatabaseTrackingSQL(connection.Database));
+                    _origin.Options.Tables.ForEach(t =>
+                    {
+                        sqlBuilder.AppendLine(_provider.GenerateEnableTableTrackingSQL(t));
+                    });
+                }
+                else
+                {
+                    _origin.Options.Tables.ForEach(t =>
+                    {
+                        sqlBuilder.AppendLine(_provider.GenerateDisableTableTrackingSQL(t));
+                    });
+                    sqlBuilder.AppendLine(_provider.GenerateDisableDatabaseTrackingSQL(connection.Database));
+                }
                 
                 IDbCommand command = connection.CreateCommand();
-                
-                command.CommandText = sql;
+                command.CommandText = sqlBuilder.ToString();
                 command.CommandType = CommandType.Text;
-
-                Console.WriteLine(command.ExecuteNonQuery());
+                command.ExecuteNonQuery();
+                
             }
                 
         }
-
-       
 	}
 }
 

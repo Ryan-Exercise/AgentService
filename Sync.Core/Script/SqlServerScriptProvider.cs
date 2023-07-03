@@ -29,12 +29,18 @@ namespace Sync.Core.Script
             return builder.ToString();
         }
 
-        public string GenerateDisableTableTrackingSQL(string tableName)
+        public string GenerateDisableTablesTrackingSQL(IEnumerable<string> tableNames)
         {
             throw new NotImplementedException();
         }
 
-        
+        public string GenerateDisableTableTrackingSQL(string tableName)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($@"IF EXISTS(SELECT 1 FROM sys.change_tracking_tables WHERE OBJECT_ID=OBJECT_ID('{tableName}'))");
+            builder.AppendLine($@"ALTER TABLE {tableName} DISABLE CHANGE_TRACKING;");
+            return builder.ToString();
+        }
 
         public string GenerateEnableDatabaseTrackingSQL(string database)
         {
@@ -43,21 +49,33 @@ namespace Sync.Core.Script
             builder.AppendLine($@"IF NOT EXISTS(SELECT 1 FROM sys.change_tracking_databases WHERE database_id=DB_ID('{database}'))");
             builder.AppendLine("BEGIN");
             builder.AppendLine($@"ALTER DATABASE {database}");
-            builder.AppendLine("SET CHANGE_TRACKING = ON(CHANGE_RETENTION = 7 DAYS, AUTO_CLEANUP = ON);");
+            builder.AppendLine("SET CHANGE_TRACKING = ON(CHANGE_RETENTION = 4 DAYS, AUTO_CLEANUP = ON);");
             builder.AppendLine("END");
 
             return builder.ToString();
         }
 
-        public string GenerateEnableTableTrackingSQL(string tableName)
+        public string GenerateEnableTablesTrackingSQL(IEnumerable<string> tableNames)
         {
             throw new NotImplementedException();
         }
 
+        public string GenerateEnableTableTrackingSQL(string tableName)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($@"IF NOT EXISTS(SELECT 1 FROM sys.change_tracking_tables WHERE OBJECT_ID=OBJECT_ID('{tableName}'))");
+            builder.AppendLine($@"ALTER TABLE {tableName} ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = OFF);");
+            return builder.ToString();
+        }
+
         public string GenerateQueryTableDeltaSQL(string table, params string[] parameters)
         {
-            return $@"select c.SYS_CHANGE_OPERATION, c.SYS_CHANGE_VERSION, c.SYS_CHANGE_CREATION_VERSION,
-";
+            
+            var builder = new StringBuilder($@"SELECT t.*,c.* FROM CHANGETABLE(CHANGES {table}, 0) c ");
+            builder.Append($@"LEFT JOIN {table} t ON ");
+            builder.Append($@"{string.Join(" AND ", parameters.Select(p => $@"t.{p} = c.{p}"))} ");
+            builder.Append("ORDER BY c.SYS_CHANGE_OPERATION;");
+            return builder.ToString();
         }
     }
 }

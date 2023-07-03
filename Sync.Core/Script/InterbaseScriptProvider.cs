@@ -4,6 +4,7 @@
 // Email:	hitxcl@gmail.com
 // Date Created: 29/06/2023
 using System;
+
 namespace Sync.Core.Script
 {
 	public class InterbaseScriptProvider : IScriptProvider
@@ -17,12 +18,22 @@ namespace Sync.Core.Script
             throw new NotImplementedException();
         }
 
+        public string GenerateDisableTablesTrackingSQL(IEnumerable<string> tableNames)
+        {
+            throw new NotImplementedException();
+        }
+
         public string GenerateDisableTableTrackingSQL(string tableName)
         {
             throw new NotImplementedException();
         }
 
         public string GenerateEnableDatabaseTrackingSQL(string database)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GenerateEnableTablesTrackingSQL(IEnumerable<string> tableNames)
         {
             throw new NotImplementedException();
         }

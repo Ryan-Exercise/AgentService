@@ -1,5 +1,18 @@
-﻿DROP DATABASE Evolution;
+﻿USE tempdb;
+DECLARE @SQL NVARCHAR(1000);
+IF EXISTS (SELECT 1 FROM sys.databases WHERE [name] = N'evolution')
+BEGIN
+    SET @SQL = N'USE [evolution];
+                 ALTER DATABASE evolution SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                 USE [tempdb];
+                 
+                 DROP DATABASE evolution;';
+    EXEC(@SQL);
+END;
+
+
 CREATE DATABASE evolution;
+USE evolution;
 CREATE TABLE Consumer(
     Id UNIQUEIDENTIFIER PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
@@ -18,19 +31,3 @@ SET @OrgId = NEWID();
 
 INSERT INTO Organisation VALUES(@OrgId, 'Northcote #1', 'Address Northcote #1')
 INSERT INTO Consumer VALUES(NEWID(), 'Ada', 'Ada', @OrgId);
-
-SELECT * FROM Consumer;
-
-
-
-# ALTER DATABASE evolution  
-# SET CHANGE_TRACKING = ON  
-# (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON);
-
-# ALTER DATABASE Evolution  
-# SET CHANGE_TRACKING = OFF;
-
-# SELECT *
-# FROM sys.change_tracking_databases
-# WHERE database_id = DB_ID('evolution');
-
